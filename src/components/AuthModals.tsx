@@ -160,19 +160,6 @@ export const AuthModals: React.FC<AuthModalsProps> = ({
               </p>
             </div>
 
-            {simulatedCodeReceived && (
-              <div className="p-3 rounded-xl bg-amber-50 border border-amber-200 text-xs text-amber-900 flex items-center justify-between">
-                <span>Demo Code: <strong>{simulatedCodeReceived}</strong></span>
-                <button
-                  type="button"
-                  onClick={() => setVerificationCode(simulatedCodeReceived)}
-                  className="font-bold underline text-amber-950"
-                >
-                  Auto-fill
-                </button>
-              </div>
-            )}
-
             {errorMsg && (
               <div className="p-3 rounded-xl bg-red-50 text-red-700 text-xs font-medium flex items-center gap-2">
                 <AlertCircle className="w-4 h-4 shrink-0" />
@@ -190,7 +177,7 @@ export const AuthModals: React.FC<AuthModalsProps> = ({
                   maxLength={6}
                   value={verificationCode}
                   onChange={(e) => setVerificationCode(e.target.value)}
-                  placeholder="123456"
+                  placeholder="Enter 6-digit code"
                   className="w-full text-center tracking-widest font-mono text-xl py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600"
                 />
               </div>
@@ -292,7 +279,7 @@ export const AuthModals: React.FC<AuthModalsProps> = ({
                     type="email"
                     value={loginEmail}
                     onChange={(e) => setLoginEmail(e.target.value)}
-                    placeholder="e.g. shahzabaman971@gmail.com"
+                    placeholder="student@example.com"
                     className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600"
                   />
                 </div>
@@ -344,28 +331,16 @@ export const AuthModals: React.FC<AuthModalsProps> = ({
               </button>
             </form>
 
-            {/* Instant Demo Account Button */}
-            <div className="pt-2 border-t border-slate-100 space-y-2">
+            <p className="text-center text-xs text-slate-500 pt-2 border-t border-slate-100">
+              Don't have an account?{' '}
               <button
                 type="button"
-                onClick={handleLoadDemo}
-                className="w-full py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200/80 text-slate-800 font-bold text-xs flex items-center justify-center gap-2 transition-colors border border-slate-200"
+                onClick={() => onSwitchMode('signup')}
+                className="font-bold text-blue-600 hover:underline"
               >
-                <Sparkles className="w-3.5 h-3.5 text-amber-600" />
-                <span>Quick Test: Sign In as Pre-configured Scholar</span>
+                Create one now
               </button>
-
-              <p className="text-center text-xs text-slate-500 pt-2">
-                Don't have an account?{' '}
-                <button
-                  type="button"
-                  onClick={() => onSwitchMode('signup')}
-                  className="font-bold text-blue-600 hover:underline"
-                >
-                  Create one now
-                </button>
-              </p>
-            </div>
+            </p>
           </div>
         ) : (
           /* SIGNUP SCREEN */
@@ -397,7 +372,7 @@ export const AuthModals: React.FC<AuthModalsProps> = ({
                     type="text"
                     value={fullName}
                     onChange={(e) => setFullName(e.target.value)}
-                    placeholder="e.g. Shahzab Aman"
+                    placeholder="Enter your full name"
                     className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600"
                   />
                 </div>

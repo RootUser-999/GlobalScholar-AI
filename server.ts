@@ -102,117 +102,55 @@ interface UserStore {
   [email: string]: UserStoreRecord;
 }
 
-const INITIAL_DEMO_USER: UserStoreRecord = {
-  id: 'usr-demo-01',
-  email: 'shahzabaman971@gmail.com',
-  name: 'Shahzab Aman',
-  passwordHash: 'Demo@12345',
-  isEmailVerified: true,
-  isActive: true,
-  createdAt: '2026-09-01T10:00:00Z',
-  profile: {
-    id: 'usr-demo-01',
-    fullName: 'Shahzab Aman',
-    email: 'shahzabaman971@gmail.com',
-    dateOfBirth: '2001-05-14',
-    gender: 'Male',
-    nationality: 'Pakistan',
-    countryOfResidence: 'Pakistan',
-    city: 'Lahore',
-    phone: '+92 300 1234567',
-    highestCompletedEducation: "Bachelor's Degree",
-    currentEducationLevel: "Graduated (Seeking Master's)",
-    previousDegree: 'BS Computer Science',
-    degreeTitle: 'Bachelor of Science in Computer Science',
-    majorFieldOfStudy: 'Computer Science',
-    institutionName: 'FAST NUCES',
-    institutionCountry: 'Pakistan',
-    graduationYear: 2024,
-    currentEnrollmentStatus: 'Graduated',
-    cgpa: 3.58,
-    cgpaScale: 4.0,
-    percentage: 86,
-    academicHonors: "Dean's List of Honor for 3 semesters; Best Final Year Project Award",
-    ieltsStatus: 'Completed',
-    ieltsOverall: 7.5,
-    ieltsListening: 8.0,
-    ieltsReading: 7.5,
-    ieltsWriting: 7.0,
-    ieltsSpeaking: 7.5,
-    toeflScore: null,
-    otherLanguageTest: 'None',
-    languageTestDate: '2024-11-10',
-    preferredCountries: ['United Kingdom', 'Germany', 'Australia', 'Sweden', 'Switzerland'],
-    preferredDegreeLevel: 'Masters',
-    preferredFields: ['Computer Science & AI', 'Data Science & Mathematics', 'Engineering & Technology'],
-    preferredUniversities: ['Oxford', 'Cambridge', 'Technical University of Munich', 'ETH Zurich', 'University of Melbourne'],
-    preferredFundingType: 'Fully Funded',
-    studyStartYear: 2026,
-    studyMode: 'Full-time On Campus',
-    workExperienceYears: 2,
-    workExperienceSummary: 'Software Engineer focusing on distributed backend systems and machine learning APIs.',
-    researchExperience: 'Published 1 paper on automated biomedical image segmentation in IEEE student conference.',
-    volunteerExperience: 'Volunteer mentor for youth coding bootcamps in Lahore.',
-    extracurricular: 'Competitive programming team lead, University Debating Society vice-president.',
-    certifications: 'AWS Certified Solutions Architect Associate; DeepLearning.AI Specialization',
-    awards: 'National ICT R&D Fund Merit Scholarship recipient during undergraduate studies.',
-    researchInterests: 'Generative AI, Large Language Model optimization, and Intelligent Robotics.',
-    additionalInfo: 'Eager to pursue advanced postgraduate research and return to advance AI research initiatives in emerging economies.',
-    cvFileName: 'Shahzab_Aman_Academic_CV.pdf',
-    onboardingCompleted: true,
-    currentOnboardingStep: 6,
-    updatedAt: new Date().toISOString(),
-  },
-  savedScholarshipIds: ['chevening-uk', 'daad-helmut-schmidt-germany', 'erasmus-mundus-emjm'],
-  trackedApplications: [
-    {
-      id: 'track-01',
-      scholarshipId: 'chevening-uk',
-      scholarshipTitle: 'Chevening Scholarships',
-      provider: 'UK Foreign, Commonwealth & Development Office (FCDO)',
-      country: 'United Kingdom',
-      status: 'Preparing Documents',
-      targetDegree: "Master's in Advanced Computer Science",
-      submissionDeadline: '2026-11-05T12:00:00Z',
-      personalTargetDate: '2026-10-20',
-      notes: 'Finalizing draft for leadership and networking essays. Contacted Dr. Tariq for first academic reference letter.',
-      officialUrl: 'https://www.chevening.org/scholarships/',
-      documentsChecklist: {
-        'Passport Copy': true,
-        'Academic Transcripts': true,
-        'Degree Certificate': true,
-        'Chevening Essays (4x)': false,
-        'Recommendation Letters (2x)': true,
-        'University Application Submission': false,
-      },
-      lastUpdated: new Date().toISOString(),
-    },
-    {
-      id: 'track-02',
-      scholarshipId: 'daad-helmut-schmidt-germany',
-      scholarshipTitle: 'DAAD Helmut-Schmidt-Programme',
-      provider: 'German Academic Exchange Service (DAAD)',
-      country: 'Germany',
-      status: 'Interested',
-      targetDegree: 'Master of Public Policy / Tech Governance',
-      submissionDeadline: '2026-07-31T23:59:59Z',
-      personalTargetDate: '2026-07-15',
-      notes: 'Reviewing partner university curricula at Willy Brandt School Erfurt and Hertie School Berlin.',
-      officialUrl: 'https://www.daad.de/en/study-and-research-in-germany/scholarships/',
-      documentsChecklist: {
-        'Europass CV': true,
-        'Letter of Motivation': false,
-        'Degree Certificate': true,
-        'IELTS Certificate': true,
-      },
-      lastUpdated: new Date().toISOString(),
-    },
-  ],
-};
+const users: UserStore = {};
 
-const users: UserStore = {
-  [INITIAL_DEMO_USER.email]: INITIAL_DEMO_USER,
-};
+function getOrCreateUser(email?: string): UserStoreRecord {
+  const cleanEmail = email ? email.toLowerCase().trim() : 'guest@scholarpulse.org';
+  if (!users[cleanEmail]) {
+    users[cleanEmail] = {
+      id: 'usr-' + Math.random().toString(36).substring(2, 9),
+      email: cleanEmail,
+      name: cleanEmail.split('@')[0],
+      passwordHash: '',
+      isEmailVerified: true,
+      isActive: true,
+      createdAt: new Date().toISOString(),
+      profile: {
+        id: 'usr-' + Math.random().toString(36).substring(2, 9),
+        fullName: '',
+        email: cleanEmail,
+        nationality: '',
+        countryOfResidence: '',
+        city: '',
+        highestCompletedEducation: '',
+        currentEducationLevel: '',
+        previousDegree: '',
+        degreeTitle: '',
+        majorFieldOfStudy: '',
+        institutionName: '',
+        institutionCountry: '',
+        graduationYear: new Date().getFullYear(),
+        currentEnrollmentStatus: '',
+        cgpa: 0,
+        cgpaScale: 4.0,
+        ieltsStatus: 'Not taken yet',
+        preferredCountries: [],
+        preferredDegreeLevel: 'Masters',
+        preferredFields: [],
+        preferredFundingType: 'Fully Funded',
+        studyStartYear: new Date().getFullYear() + 1,
+        studyMode: 'Full-time On Campus',
+        workExperienceYears: 0,
+        onboardingCompleted: false,
+        currentOnboardingStep: 1,
+        updatedAt: new Date().toISOString(),
+      },
+      savedScholarshipIds: [],
+      trackedApplications: [],
+    };
+  }
+  return users[cleanEmail];
+}
 
 let searchQueriesCount = 12; // Initial seed counter
 
@@ -504,7 +442,7 @@ app.get('/api/admin/logs', (req, res) => {
 
 app.delete('/api/admin/logs', (req, res) => {
   serverLogs.length = 0;
-  addLog('INFO', 'Server execution logs cleared by administrator "qulli"', 'ADMIN');
+  addLog('INFO', 'Server execution logs cleared by administrator', 'ADMIN');
   res.json({ success: true, message: 'Logs cleared successfully' });
 });
 
@@ -716,14 +654,13 @@ app.post('/api/auth/forgot-password', (req, res) => {
 // Profile endpoints
 app.get('/api/profile', (req, res) => {
   const email = (req.query.email as string)?.toLowerCase().trim();
-  const user = users[email] || users[INITIAL_DEMO_USER.email];
+  const user = getOrCreateUser(email);
   res.json({ profile: user.profile });
 });
 
 app.put('/api/profile', (req, res) => {
   const { email, profileData } = req.body;
-  const cleanEmail = email?.toLowerCase().trim();
-  const user = users[cleanEmail] || users[INITIAL_DEMO_USER.email];
+  const user = getOrCreateUser(email);
 
   user.profile = {
     ...user.profile,
@@ -742,15 +679,14 @@ app.put('/api/profile', (req, res) => {
 // Saved scholarships endpoints
 app.get('/api/saved', (req, res) => {
   const email = (req.query.email as string)?.toLowerCase().trim();
-  const user = users[email] || users[INITIAL_DEMO_USER.email];
+  const user = getOrCreateUser(email);
   const savedScholarships = scholarshipsDB.filter((s) => user.savedScholarshipIds.includes(s.id));
   res.json({ savedIds: user.savedScholarshipIds, scholarships: savedScholarships });
 });
 
 app.post('/api/saved/toggle', (req, res) => {
   const { email, scholarshipId } = req.body;
-  const cleanEmail = email?.toLowerCase().trim();
-  const user = users[cleanEmail] || users[INITIAL_DEMO_USER.email];
+  const user = getOrCreateUser(email);
 
   const index = user.savedScholarshipIds.indexOf(scholarshipId);
   let isSaved = false;
@@ -769,14 +705,13 @@ app.post('/api/saved/toggle', (req, res) => {
 // Application tracker endpoints
 app.get('/api/tracker', (req, res) => {
   const email = (req.query.email as string)?.toLowerCase().trim();
-  const user = users[email] || users[INITIAL_DEMO_USER.email];
+  const user = getOrCreateUser(email);
   res.json({ tracker: user.trackedApplications });
 });
 
 app.post('/api/tracker', (req, res) => {
   const { email, application } = req.body;
-  const cleanEmail = email?.toLowerCase().trim();
-  const user = users[cleanEmail] || users[INITIAL_DEMO_USER.email];
+  const user = getOrCreateUser(email);
 
   const newApp = {
     id: 'track-' + Math.random().toString(36).substring(2, 9),
@@ -806,8 +741,7 @@ app.post('/api/tracker', (req, res) => {
 
 app.put('/api/tracker/:id', (req, res) => {
   const { email, updates } = req.body;
-  const cleanEmail = email?.toLowerCase().trim();
-  const user = users[cleanEmail] || users[INITIAL_DEMO_USER.email];
+  const user = getOrCreateUser(email);
 
   const itemIndex = user.trackedApplications.findIndex((t) => t.id === req.params.id);
   if (itemIndex === -1) {
@@ -831,7 +765,7 @@ app.put('/api/tracker/:id', (req, res) => {
 
 app.delete('/api/tracker/:id', (req, res) => {
   const email = (req.query.email as string)?.toLowerCase().trim();
-  const user = users[email] || users[INITIAL_DEMO_USER.email];
+  const user = getOrCreateUser(email);
 
   user.trackedApplications = user.trackedApplications.filter((t) => t.id !== req.params.id);
   addLog('INFO', `Student ${user.email} removed tracked application: ${req.params.id}`, 'TRACKER');
@@ -942,10 +876,10 @@ Include official reference URLs.`;
         );
       } catch (err: any) {
         addLog('WARN', `Gemini search grounding fallback triggered: ${err.message}`, 'AI_SEARCH');
-        aiOverview = `Discovered ${matchingScholarships.length} verified scholarship opportunities from the institutional scholarship database matching your criteria.`;
+        aiOverview = `Displaying verified database records: Discovered ${matchingScholarships.length} verified scholarship opportunities matching your academic qualifications.`;
       }
     } else {
-      aiOverview = `Retrieved ${matchingScholarships.length} verified scholarship opportunities from the verified database.`;
+      aiOverview = `Displaying verified database records: Retrieved ${matchingScholarships.length} verified scholarship opportunities from the institutional repository.`;
     }
 
     // Evaluate personalized eligibility

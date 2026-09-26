@@ -70,7 +70,7 @@ export const Navbar: React.FC<NavbarProps> = ({
             </div>
             <div>
               <div className="flex items-center gap-1.5">
-                <span className="font-bold text-lg text-slate-900 tracking-tight">GlobalScholar</span>
+                <span className="font-bold text-lg text-slate-900 tracking-tight">ScholarPulse</span>
                 <span className="text-xs font-semibold px-1.5 py-0.5 rounded bg-blue-50 text-blue-700 border border-blue-200/60">
                   AI
                 </span>
@@ -201,7 +201,7 @@ export const Navbar: React.FC<NavbarProps> = ({
             ) : onOpenAdminLogin ? (
               <button
                 onClick={onOpenAdminLogin}
-                title="Admin Portal Login (qulli)"
+                title="System Administration Portal"
                 className="text-slate-500 hover:text-slate-800 p-2 rounded-lg hover:bg-slate-100 transition-colors flex items-center gap-1 text-xs"
               >
                 <ShieldAlert className="w-4 h-4 text-slate-500" />
@@ -338,7 +338,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                           className="w-full px-4 py-2 text-left text-xs font-medium text-slate-700 hover:bg-slate-50 flex items-center gap-2"
                         >
                           <ShieldAlert className="w-4 h-4 text-slate-400" />
-                          Admin Login (qulli)
+                          Admin Portal Login
                         </button>
                       ) : null}
                     </div>

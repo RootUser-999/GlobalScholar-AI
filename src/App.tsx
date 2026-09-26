@@ -221,11 +221,6 @@ function AppContent() {
                 </p>
               </div>
 
-              <div className="p-3.5 rounded-2xl bg-white border border-slate-200 text-xs text-slate-600 shadow-sm font-mono text-[11px] space-y-1">
-                <p className="font-sans font-bold text-slate-700">Hardcoded Administrator Credentials:</p>
-                <p>Username: <strong className="text-slate-900">qulli</strong> · Password: <strong className="text-slate-900">qulli</strong></p>
-              </div>
-
               <div className="flex flex-col sm:flex-row justify-center gap-3 pt-2">
                 <button
                   onClick={() => setAdminLoginOpen(true)}

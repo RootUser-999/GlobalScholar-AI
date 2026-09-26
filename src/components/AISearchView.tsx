@@ -43,7 +43,7 @@ export const AISearchView: React.FC<AISearchViewProps> = ({
   >([
     {
       sender: 'ai',
-      text: `Hello ${profile.fullName ? profile.fullName.split(' ')[0] : 'there'}! I am your GlobalScholar AI Advisor. I have calibrated my responses with your academic profile (${profile.nationality || 'International'}, ${profile.preferredDegreeLevel || 'Masters'}, CGPA ${profile.cgpa || 3.5}/4.0). Ask me anything about international scholarships, IELTS waivers, or application tactics!`,
+      text: `Hello ${profile.fullName ? profile.fullName.split(' ')[0] : 'there'}! I am your ScholarPulse AI Advisor. I have calibrated my responses with your academic profile (${profile.nationality || 'International'}, ${profile.preferredDegreeLevel || 'Masters'}, CGPA ${profile.cgpa || 3.5}/4.0). Ask me anything about international scholarships, IELTS waivers, or application tactics!`,
     },
   ]);
 
@@ -72,10 +72,26 @@ export const AISearchView: React.FC<AISearchViewProps> = ({
           },
         }),
       });
-      const data: AISearchResponse = await res.json();
-      setSearchResponse(data);
-    } catch (err) {
-      console.warn('Search failed:', err);
+      if (res.ok) {
+        const data: AISearchResponse = await res.json();
+        setSearchResponse(data);
+      } else {
+        setSearchResponse({
+          query: q,
+          scholarships: VERIFIED_SCHOLARSHIPS,
+          groundingSources: [],
+          isLiveSearch: false,
+          aiOverview: `Displaying verified database records: Discovered ${VERIFIED_SCHOLARSHIPS.length} verified scholarship opportunities from the institutional scholarship database.`,
+        });
+      }
+    } catch {
+      setSearchResponse({
+        query: q,
+        scholarships: VERIFIED_SCHOLARSHIPS,
+        groundingSources: [],
+        isLiveSearch: false,
+        aiOverview: `Displaying verified database records: Discovered ${VERIFIED_SCHOLARSHIPS.length} verified scholarship opportunities from the institutional scholarship database.`,
+      });
     } finally {
       setIsSearching(false);
     }
@@ -261,18 +277,62 @@ export const AISearchView: React.FC<AISearchViewProps> = ({
           </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {displayScholarships.map((s) => (
-            <ScholarshipCard
-              key={s.id}
-              scholarship={s}
-              isSaved={savedScholarshipIds.includes(s.id)}
-              onToggleSave={toggleSaveScholarship}
-              onViewDetails={onSelectScholarship}
-              onAddToTracker={onAddToTracker}
-            />
-          ))}
-        </div>
+        {isSearching ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {[1, 2, 3, 4, 5, 6].map((idx) => (
+              <div
+                key={idx}
+                className="bg-white rounded-3xl p-6 border border-slate-200/80 shadow-sm space-y-4 animate-pulse"
+              >
+                <div className="flex items-center justify-between">
+                  <div className="h-5 w-24 bg-slate-200 rounded-md" />
+                  <div className="h-5 w-16 bg-slate-200 rounded-full" />
+                </div>
+                <div className="space-y-2">
+                  <div className="h-6 w-3/4 bg-slate-200 rounded-md" />
+                  <div className="h-4 w-1/2 bg-slate-200 rounded-md" />
+                </div>
+                <div className="h-16 bg-slate-100 rounded-xl" />
+                <div className="pt-2 flex justify-between items-center">
+                  <div className="h-4 w-28 bg-slate-200 rounded" />
+                  <div className="h-8 w-24 bg-slate-200 rounded-xl" />
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : displayScholarships.length === 0 ? (
+          <div className="p-12 text-center bg-white rounded-3xl border border-slate-200 shadow-sm space-y-4 max-w-lg mx-auto">
+            <div className="w-14 h-14 rounded-2xl bg-indigo-50 text-indigo-600 flex items-center justify-center mx-auto">
+              <Search className="w-7 h-7" />
+            </div>
+            <h3 className="text-lg font-bold text-slate-900">No Scholarships Match Your Query</h3>
+            <p className="text-xs text-slate-500 leading-relaxed">
+              Displaying verified database records: We couldn't find active opportunities matching this specific combination. Try broadening your degree level, country, or keyword search.
+            </p>
+            <button
+              onClick={() => {
+                setQuery('');
+                setSearchResponse(null);
+              }}
+              className="px-5 py-2.5 rounded-xl bg-blue-600 text-white font-bold text-xs shadow hover:bg-blue-700 transition-colors"
+            >
+              Reset to All Verified Scholarships
+            </button>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {displayScholarships.map((s) => (
+              <ScholarshipCard
+                key={s.id}
+                scholarship={s}
+                isSaved={savedScholarshipIds.includes(s.id)}
+                onToggleSave={toggleSaveScholarship}
+                onViewDetails={onSelectScholarship}
+                onAddToTracker={onAddToTracker}
+              />
+            ))}
+          </div>
+        )}
       </div>
 
       {/* FLOATING AI ASSISTANT CHAT DRAWER */}
@@ -292,7 +352,7 @@ export const AISearchView: React.FC<AISearchViewProps> = ({
               <div className="flex items-center gap-2">
                 <Bot className="w-5 h-5 text-amber-300" />
                 <div>
-                  <h4 className="text-xs font-bold">GlobalScholar Advisor</h4>
+                  <h4 className="text-xs font-bold">ScholarPulse Advisor</h4>
                   <p className="text-[10px] text-indigo-200">Grounded AI Consultation</p>
                 </div>
               </div>

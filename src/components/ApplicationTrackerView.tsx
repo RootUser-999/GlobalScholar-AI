@@ -87,7 +87,7 @@ export const ApplicationTrackerView: React.FC<ApplicationTrackerViewProps> = ({
       <div className="p-4 rounded-xl bg-blue-50 border border-blue-200 text-blue-900 text-xs flex items-start gap-3">
         <AlertCircle className="w-4 h-4 text-blue-600 shrink-0 mt-0.5" />
         <div>
-          <strong>Official Portal Reminder:</strong> Application submission always takes place through each scholarship provider's accredited website (e.g. OASIS for Australia Awards, Chevening Portal, USEFP). GlobalScholar AI assists you in tracking deadlines and document readiness.
+          <strong>Official Portal Reminder:</strong> Application submission always takes place through each scholarship provider's accredited website (e.g. OASIS for Australia Awards, Chevening Portal, USEFP). ScholarPulse AI assists you in tracking deadlines and document readiness.
         </div>
       </div>
 

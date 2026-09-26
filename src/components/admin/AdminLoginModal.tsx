@@ -20,8 +20,8 @@ interface AdminLoginModalProps {
 
 export const AdminLoginModal: React.FC<AdminLoginModalProps> = ({ isOpen, onClose, onSuccess }) => {
   const { loginAdmin, isLoading } = useAuth();
-  const [username, setUsername] = useState('qulli');
-  const [password, setPassword] = useState('qulli');
+  const [username, setUsername] = useState('');
+  const [password, setPassword] = useState('');
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
   if (!isOpen) return null;
@@ -40,13 +40,8 @@ export const AdminLoginModal: React.FC<AdminLoginModalProps> = ({ isOpen, onClos
       onSuccess();
       onClose();
     } else {
-      setErrorMsg(res.error || 'Invalid credentials. Expected: qulli / qulli');
+      setErrorMsg(res.error || 'Invalid administrative credentials. Access restricted.');
     }
-  };
-
-  const handleFillDemo = () => {
-    setUsername('qulli');
-    setPassword('qulli');
   };
 
   return (
@@ -72,27 +67,7 @@ export const AdminLoginModal: React.FC<AdminLoginModalProps> = ({ isOpen, onClos
             Admin Portal Login
           </h2>
           <p className="text-xs text-slate-500 max-w-xs mx-auto">
-            Authorized access only. Manage live scholarships catalog, student records, and server logs.
-          </p>
-        </div>
-
-        {/* Notice of hardcoded credentials */}
-        <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-200 text-xs space-y-1.5">
-          <div className="flex items-center justify-between">
-            <span className="font-bold text-slate-700 flex items-center gap-1.5">
-              <KeyRound className="w-3.5 h-3.5 text-indigo-600" />
-              <span>Admin Credentials</span>
-            </span>
-            <button
-              type="button"
-              onClick={handleFillDemo}
-              className="text-[11px] font-bold text-blue-600 hover:underline"
-            >
-              Fill Credentials
-            </button>
-          </div>
-          <p className="text-slate-600 font-mono text-[11px]">
-            Username: <strong className="text-slate-900 font-bold">qulli</strong> · Password: <strong className="text-slate-900 font-bold">qulli</strong>
+            Authorized administrative access only. Manage live scholarships catalog, student records, and server logs.
           </p>
         </div>
 
@@ -114,7 +89,7 @@ export const AdminLoginModal: React.FC<AdminLoginModalProps> = ({ isOpen, onClos
                 type="text"
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
-                placeholder="qulli"
+                placeholder="Enter admin username"
                 className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-600 font-medium"
               />
             </div>
@@ -130,7 +105,7 @@ export const AdminLoginModal: React.FC<AdminLoginModalProps> = ({ isOpen, onClos
                 type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                placeholder="••••••••"
+                placeholder="Enter master password"
                 className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-600 font-medium"
               />
             </div>

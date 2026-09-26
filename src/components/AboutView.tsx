@@ -27,7 +27,7 @@ export const AboutView: React.FC<AboutViewProps> = ({ onStartSearch, onExplore }
           Democratizing Access to Global Higher Education
         </h1>
         <p className="text-sm sm:text-base text-slate-600 max-w-2xl mx-auto leading-relaxed">
-          GlobalScholar AI was founded to eliminate the informational asymmetry faced by talented students in developing and emerging nations seeking international scholarships.
+          ScholarPulse AI was founded to eliminate the informational asymmetry faced by talented students in developing and emerging nations seeking international scholarships.
         </p>
       </div>
 

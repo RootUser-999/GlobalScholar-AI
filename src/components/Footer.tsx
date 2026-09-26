@@ -32,7 +32,7 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate, onOpenPolicy, onOpen
                 <GraduationCap className="w-6 h-6" />
               </div>
               <div>
-                <span className="font-bold text-xl text-white tracking-tight">GlobalScholar AI</span>
+                <span className="font-bold text-xl text-white tracking-tight">ScholarPulse AI</span>
                 <span className="ml-2 text-xs font-semibold px-2 py-0.5 rounded bg-blue-900/60 text-blue-300 border border-blue-700/50">
                   Global Edition
                 </span>
@@ -226,13 +226,10 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate, onOpenPolicy, onOpen
             {onOpenAdmin && (
               <button
                 onClick={onOpenAdmin}
-                className="text-amber-400 hover:text-amber-300 font-semibold flex items-center gap-1 transition-colors"
-                title="Admin Control Suite (qulli)"
+                className="text-slate-400 hover:text-amber-400 font-medium flex items-center gap-1.5 transition-colors"
+                title="System Administration Portal"
               >
                 <span>Admin Portal</span>
-                <span className="text-[10px] px-1.5 py-0.2 rounded bg-amber-400/20 border border-amber-400/40 text-amber-300">
-                  qulli
-                </span>
               </button>
             )}
           </div>
