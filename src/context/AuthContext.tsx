@@ -1,17 +1,21 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { StudentProfile, TrackedApplication, UserAuth, Scholarship } from '../types';
+import { StudentProfile, TrackedApplication, UserAuth, Scholarship, AdminUser } from '../types';
 import { VERIFIED_SCHOLARSHIPS } from '../data/scholarships';
 
 interface AuthContextType {
   user: UserAuth | null;
+  adminUser: AdminUser | null;
+  isAdmin: boolean;
   profile: StudentProfile;
   savedScholarshipIds: string[];
   trackedApplications: TrackedApplication[];
   isLoading: boolean;
-  login: (email: string, password?: string) => Promise<boolean>;
+  login: (email: string, password?: string) => Promise<{ success: boolean; error?: string }>;
   register: (fullName: string, email: string, password?: string) => Promise<{ success: boolean; code?: string; error?: string }>;
   verifyEmail: (code: string) => Promise<boolean>;
   logout: () => void;
+  loginAdmin: (username: string, password: string) => Promise<{ success: boolean; error?: string }>;
+  logoutAdmin: () => void;
   updateProfile: (data: Partial<StudentProfile>) => Promise<void>;
   saveOnboardingStep: (step: number, data: Partial<StudentProfile>) => Promise<void>;
   toggleSaveScholarship: (scholarshipId: string) => Promise<boolean>;
@@ -150,7 +154,23 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return saved ? JSON.parse(saved) : INITIAL_DEMO_TRACKER;
   });
 
+  const [adminUser, setAdminUser] = useState<AdminUser | null>(() => {
+    const saved = localStorage.getItem('gs_admin_user');
+    return saved ? JSON.parse(saved) : null;
+  });
+
+  const isAdmin = !!adminUser;
+
   const [isLoading, setIsLoading] = useState(false);
+
+  // Sync admin user to local storage
+  useEffect(() => {
+    if (adminUser) {
+      localStorage.setItem('gs_admin_user', JSON.stringify(adminUser));
+    } else {
+      localStorage.removeItem('gs_admin_user');
+    }
+  }, [adminUser]);
 
   // Sync to local storage
   useEffect(() => {
@@ -173,7 +193,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     localStorage.setItem('gs_tracker', JSON.stringify(trackedApplications));
   }, [trackedApplications]);
 
-  const login = async (email: string, password?: string): Promise<boolean> => {
+  const login = async (email: string, password?: string): Promise<{ success: boolean; error?: string }> => {
     setIsLoading(true);
     try {
       const res = await fetch('/api/auth/login', {
@@ -181,26 +201,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password: password || 'Demo@12345' }),
       });
+      const data = await res.json();
       if (res.ok) {
-        const data = await res.json();
         setUser(data.user);
         if (data.profile) setProfile(data.profile);
         if (data.savedScholarshipIds) setSavedScholarshipIds(data.savedScholarshipIds);
         if (data.trackedApplications) setTrackedApplications(data.trackedApplications);
         setIsLoading(false);
-        return true;
+        return { success: true };
       }
-      // Fallback for offline/custom email
-      const fallbackUser: UserAuth = {
-        id: 'usr-' + Math.random().toString(36).substring(2, 8),
-        email: email.toLowerCase().trim(),
-        name: email.split('@')[0],
-        isEmailVerified: true,
-      };
-      setUser(fallbackUser);
       setIsLoading(false);
-      return true;
+      return { success: false, error: data.error || 'Invalid credentials' };
     } catch {
+      // Offline fallback
       const fallbackUser: UserAuth = {
         id: 'usr-' + Math.random().toString(36).substring(2, 8),
         email: email.toLowerCase().trim(),
@@ -209,8 +222,47 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       };
       setUser(fallbackUser);
       setIsLoading(false);
-      return true;
+      return { success: true };
     }
+  };
+
+  const loginAdmin = async (username: string, password: string): Promise<{ success: boolean; error?: string }> => {
+    setIsLoading(true);
+    try {
+      const res = await fetch('/api/admin/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username, password }),
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        setAdminUser(data.admin);
+        setIsLoading(false);
+        return { success: true };
+      }
+      setIsLoading(false);
+      return { success: false, error: data.error || 'Invalid admin credentials' };
+    } catch {
+      // Offline check for qulli / qulli
+      if ((username === 'qulli' || username === 'qulli@admin.com') && password === 'qulli') {
+        const fallbackAdmin: AdminUser = {
+          username: 'qulli',
+          name: 'Qulli (System Administrator)',
+          role: 'superadmin',
+          token: 'adm-token-qulli-' + Date.now(),
+        };
+        setAdminUser(fallbackAdmin);
+        setIsLoading(false);
+        return { success: true };
+      }
+      setIsLoading(false);
+      return { success: false, error: 'Invalid admin credentials' };
+    }
+  };
+
+  const logoutAdmin = () => {
+    setAdminUser(null);
+    localStorage.removeItem('gs_admin_user');
   };
 
   const register = async (fullName: string, email: string, password?: string) => {
@@ -450,6 +502,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     <AuthContext.Provider
       value={{
         user,
+        adminUser,
+        isAdmin,
         profile,
         savedScholarshipIds,
         trackedApplications,
@@ -458,6 +512,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         register,
         verifyEmail,
         logout,
+        loginAdmin,
+        logoutAdmin,
         updateProfile,
         saveOnboardingStep,
         toggleSaveScholarship,

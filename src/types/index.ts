@@ -189,4 +189,49 @@ export interface UserAuth {
   name: string;
   isEmailVerified: boolean;
   token?: string;
+  isAdmin?: boolean;
 }
+
+export interface AdminUser {
+  username: string;
+  name: string;
+  role: 'superadmin';
+  token: string;
+}
+
+export interface ServerLogEntry {
+  id: string;
+  timestamp: string;
+  level: 'INFO' | 'WARN' | 'ERROR' | 'AI_SEARCH';
+  message: string;
+  category?: string;
+  details?: any;
+}
+
+export interface AdminStudent {
+  id: string;
+  email: string;
+  name: string;
+  isEmailVerified: boolean;
+  isActive: boolean;
+  createdAt: string;
+  profile: StudentProfile;
+  trackedCount: number;
+  savedCount: number;
+}
+
+export interface AdminAnalytics {
+  totalStudents: number;
+  totalScholarships: number;
+  featuredScholarships: number;
+  totalTrackedApplications: number;
+  statusCounts: Record<ApplicationStatus, number>;
+  activeSearchQueriesCount: number;
+  serverUptimeSeconds: number;
+  geminiStatus: {
+    connected: boolean;
+    model: string;
+    searchGrounding: boolean;
+  };
+}
+

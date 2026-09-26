@@ -17,9 +17,10 @@ import {
 interface FooterProps {
   onNavigate: (view: string) => void;
   onOpenPolicy?: (type: 'privacy' | 'terms') => void;
+  onOpenAdmin?: () => void;
 }
 
-export const Footer: React.FC<FooterProps> = ({ onNavigate, onOpenPolicy }) => {
+export const Footer: React.FC<FooterProps> = ({ onNavigate, onOpenPolicy, onOpenAdmin }) => {
   return (
     <footer className="bg-slate-950 text-slate-300 pt-16 pb-12 border-t border-slate-800">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -222,6 +223,18 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate, onOpenPolicy }) => {
             >
               About Us
             </button>
+            {onOpenAdmin && (
+              <button
+                onClick={onOpenAdmin}
+                className="text-amber-400 hover:text-amber-300 font-semibold flex items-center gap-1 transition-colors"
+                title="Admin Control Suite (qulli)"
+              >
+                <span>Admin Portal</span>
+                <span className="text-[10px] px-1.5 py-0.2 rounded bg-amber-400/20 border border-amber-400/40 text-amber-300">
+                  qulli
+                </span>
+              </button>
+            )}
           </div>
         </div>
       </div>

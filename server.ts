@@ -6,13 +6,56 @@ import dotenv from 'dotenv';
 import { GoogleGenAI } from '@google/genai';
 import { VERIFIED_SCHOLARSHIPS } from './src/data/scholarships';
 import { evaluateEligibility } from './src/utils/eligibility';
+import { Scholarship, ServerLogEntry, AdminAnalytics, AdminStudent, ApplicationStatus } from './src/types';
 
 dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT ? parseInt(process.env.PORT, 10) : 3000;
+const serverStartTime = Date.now();
 
 app.use(express.json({ limit: '10mb' }));
+
+// ----------------- SERVER EXECUTION LOGS SYSTEM ----------------- //
+const serverLogs: ServerLogEntry[] = [];
+
+export function addLog(
+  level: 'INFO' | 'WARN' | 'ERROR' | 'AI_SEARCH',
+  message: string,
+  category: string = 'SYSTEM',
+  details?: any
+) {
+  const entry: ServerLogEntry = {
+    id: 'log-' + Math.random().toString(36).substring(2, 9),
+    timestamp: new Date().toISOString(),
+    level,
+    message,
+    category,
+    details: details ? (typeof details === 'object' ? details : { raw: details }) : undefined,
+  };
+  serverLogs.unshift(entry);
+  if (serverLogs.length > 500) {
+    serverLogs.pop();
+  }
+  console.log(`[${entry.timestamp}] [${level}] [${category}] ${message}`);
+}
+
+// Initial boot log
+addLog('INFO', 'GlobalScholar AI Full-Stack Server initialized', 'BOOT', {
+  port: PORT,
+  nodeEnv: process.env.NODE_ENV || 'development',
+});
+
+// Request logger middleware
+app.use((req, res, next) => {
+  if (req.path.startsWith('/api') && req.path !== '/api/admin/logs' && req.path !== '/api/health') {
+    addLog('INFO', `${req.method} ${req.path}`, 'HTTP', {
+      ip: req.ip || req.socket.remoteAddress,
+      query: Object.keys(req.query).length ? req.query : undefined,
+    });
+  }
+  next();
+});
 
 // Initialize Google GenAI
 const apiKey = process.env.GEMINI_API_KEY;
@@ -27,31 +70,46 @@ if (apiKey) {
       },
     },
   });
+  addLog('INFO', 'Gemini AI Client initialized with Google Search Grounding enabled', 'AI_ENGINE', {
+    model: 'gemini-3.8-flash',
+  });
+} else {
+  addLog('WARN', 'GEMINI_API_KEY is not defined. AI searches will use institutional database matching.', 'AI_ENGINE');
 }
 
-// In-memory data store for the session
+// ----------------- MUTABLE SCHOLARSHIPS DATABASE ----------------- //
+// Seeded from verified institutional scholarships catalog, allowing admin CRUD operations
+let scholarshipsDB: Scholarship[] = JSON.parse(JSON.stringify(VERIFIED_SCHOLARSHIPS));
+addLog('INFO', `Scholarship Database loaded with ${scholarshipsDB.length} verified opportunities`, 'DATABASE');
+
+// ----------------- USER & PROFILE STORE ----------------- //
+interface UserStoreRecord {
+  id: string;
+  email: string;
+  name: string;
+  passwordHash: string;
+  isEmailVerified: boolean;
+  isActive: boolean;
+  createdAt: string;
+  verificationCode?: string;
+  verificationSentAt?: number;
+  profile: any;
+  savedScholarshipIds: string[];
+  trackedApplications: any[];
+}
+
 interface UserStore {
-  [email: string]: {
-    id: string;
-    email: string;
-    name: string;
-    passwordHash: string;
-    isEmailVerified: boolean;
-    verificationCode?: string;
-    verificationSentAt?: number;
-    profile: any;
-    savedScholarshipIds: string[];
-    trackedApplications: any[];
-  };
+  [email: string]: UserStoreRecord;
 }
 
-// Default initial demo user so reviewers can test immediately
-const INITIAL_DEMO_USER = {
+const INITIAL_DEMO_USER: UserStoreRecord = {
   id: 'usr-demo-01',
   email: 'shahzabaman971@gmail.com',
   name: 'Shahzab Aman',
   passwordHash: 'Demo@12345',
   isEmailVerified: true,
+  isActive: true,
+  createdAt: '2026-09-01T10:00:00Z',
   profile: {
     id: 'usr-demo-01',
     fullName: 'Shahzab Aman',
@@ -156,6 +214,8 @@ const users: UserStore = {
   [INITIAL_DEMO_USER.email]: INITIAL_DEMO_USER,
 };
 
+let searchQueriesCount = 12; // Initial seed counter
+
 // Rate limiter / cache for search
 interface SearchCacheItem {
   timestamp: number;
@@ -164,17 +224,307 @@ interface SearchCacheItem {
 const searchCache = new Map<string, SearchCacheItem>();
 const CACHE_TTL_MS = 1000 * 60 * 30; // 30 minutes
 
-// ----------------- API ROUTES ----------------- //
+// ----------------- ADMIN AUTHENTICATION ----------------- //
+// Hardcoded Admin Credentials:
+// Username: qulli
+// Password: qulli
+app.post('/api/admin/login', (req, res) => {
+  const { username, password } = req.body;
+  if (!username || !password) {
+    return res.status(400).json({ error: 'Username and password are required' });
+  }
+
+  const cleanUser = username.trim().toLowerCase();
+  if ((cleanUser === 'qulli' || cleanUser === 'qulli@admin.com') && password === 'qulli') {
+    addLog('INFO', 'Administrator "qulli" authenticated successfully', 'ADMIN_AUTH');
+    return res.json({
+      success: true,
+      admin: {
+        username: 'qulli',
+        name: 'Qulli (System Administrator)',
+        role: 'superadmin',
+        token: 'adm-token-qulli-' + Date.now(),
+      },
+    });
+  }
+
+  addLog('WARN', `Failed admin login attempt with username "${username}"`, 'ADMIN_AUTH');
+  return res.status(401).json({ error: 'Invalid admin credentials. Please check your username and password.' });
+});
+
+// ----------------- ADMIN ANALYTICS ----------------- //
+app.get('/api/admin/analytics', (req, res) => {
+  try {
+    const userList = Object.values(users);
+    const totalStudents = userList.length;
+    const totalScholarships = scholarshipsDB.length;
+    const featuredScholarships = scholarshipsDB.filter((s) => s.isFeatured).length;
+
+    let totalTrackedApplications = 0;
+    const statusCounts: Record<ApplicationStatus, number> = {
+      Interested: 0,
+      'Preparing Documents': 0,
+      'Ready to Apply': 0,
+      Applied: 0,
+      Accepted: 0,
+      Rejected: 0,
+    };
+
+    userList.forEach((u) => {
+      if (u.trackedApplications && Array.isArray(u.trackedApplications)) {
+        totalTrackedApplications += u.trackedApplications.length;
+        u.trackedApplications.forEach((app: any) => {
+          if (app.status && statusCounts[app.status as ApplicationStatus] !== undefined) {
+            statusCounts[app.status as ApplicationStatus]++;
+          }
+        });
+      }
+    });
+
+    const analytics: AdminAnalytics = {
+      totalStudents,
+      totalScholarships,
+      featuredScholarships,
+      totalTrackedApplications,
+      statusCounts,
+      activeSearchQueriesCount: searchQueriesCount,
+      serverUptimeSeconds: Math.floor((Date.now() - serverStartTime) / 1000),
+      geminiStatus: {
+        connected: !!apiKey,
+        model: 'gemini-3.8-flash',
+        searchGrounding: !!apiKey,
+      },
+    };
+
+    res.json(analytics);
+  } catch (err: any) {
+    addLog('ERROR', `Failed to compute analytics: ${err.message}`, 'ADMIN');
+    res.status(500).json({ error: 'Failed to retrieve analytics' });
+  }
+});
+
+// ----------------- ADMIN STUDENT MANAGEMENT ----------------- //
+app.get('/api/admin/students', (req, res) => {
+  try {
+    const studentList: AdminStudent[] = Object.values(users).map((u) => ({
+      id: u.id,
+      email: u.email,
+      name: u.name,
+      isEmailVerified: u.isEmailVerified,
+      isActive: u.isActive !== false,
+      createdAt: u.createdAt || new Date().toISOString(),
+      profile: u.profile,
+      trackedCount: u.trackedApplications ? u.trackedApplications.length : 0,
+      savedCount: u.savedScholarshipIds ? u.savedScholarshipIds.length : 0,
+    }));
+
+    res.json({ students: studentList });
+  } catch (err: any) {
+    res.status(500).json({ error: 'Failed to fetch student directory' });
+  }
+});
+
+// Toggle student active/suspended state
+app.put('/api/admin/students/:id/status', (req, res) => {
+  const { isActive } = req.body;
+  const targetUser = Object.values(users).find((u) => u.id === req.params.id);
+
+  if (!targetUser) {
+    return res.status(404).json({ error: 'Student record not found' });
+  }
+
+  targetUser.isActive = isActive;
+  addLog(
+    'WARN',
+    `Administrator modified student status for ${targetUser.email} to: ${isActive ? 'ACTIVE' : 'SUSPENDED'}`,
+    'ADMIN_USER_MOD'
+  );
+
+  res.json({ success: true, studentId: targetUser.id, isActive: targetUser.isActive });
+});
+
+// Reset student password
+app.post('/api/admin/students/:id/reset-password', (req, res) => {
+  const { newPassword } = req.body;
+  const targetUser = Object.values(users).find((u) => u.id === req.params.id);
+
+  if (!targetUser) {
+    return res.status(404).json({ error: 'Student record not found' });
+  }
+
+  const passwordToSet = newPassword || 'Reset@2026!';
+  targetUser.passwordHash = passwordToSet;
+  addLog('INFO', `Administrator reset password for student ${targetUser.email}`, 'ADMIN_USER_MOD');
+
+  res.json({ success: true, message: `Password reset to: ${passwordToSet}` });
+});
+
+// ----------------- ADMIN SCHOLARSHIP MANAGEMENT (CRUD) ----------------- //
+// Create / Add scholarship
+app.post('/api/admin/scholarships', (req, res) => {
+  try {
+    const data = req.body;
+    if (!data.title || !data.provider || !data.country) {
+      return res.status(400).json({ error: 'Title, Provider, and Country are mandatory.' });
+    }
+
+    const newId =
+      data.id ||
+      data.title
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/^-|-$/g, '') +
+        '-' +
+        Math.random().toString(36).substring(2, 6);
+
+    const newScholarship: Scholarship = {
+      id: newId,
+      title: data.title,
+      provider: data.provider,
+      country: data.country,
+      countryCode: data.countryCode || 'INT',
+      flagEmoji: data.flagEmoji || '🌐',
+      degreeLevels: data.degreeLevels || ['Masters'],
+      fundingType: data.fundingType || 'Fully Funded',
+      fieldsOfStudy: data.fieldsOfStudy || ['All Fields'],
+      coverageDetails: data.coverageDetails || {
+        tuition: data.tuition || '100% Tuition Waiver',
+        monthlyStipend: data.monthlyStipend || 'Comprehensive Monthly Living Stipend',
+        airfare: data.airfare || 'Economy Return Flight Ticket',
+        healthInsurance: data.healthInsurance || 'Full Health Insurance',
+        accommodation: data.accommodation || 'Housing support provided',
+      },
+      deadline: data.deadline || 'Consult official schedule',
+      deadlineDate: data.deadlineDate || new Date(Date.now() + 1000 * 60 * 60 * 24 * 120).toISOString(),
+      academicRequirements: data.academicRequirements || {
+        minCGPA: parseFloat(data.minCGPA) || 3.0,
+        cgpaScale: 4.0,
+        degreePrerequisite: 'Relevant undergraduate qualification',
+      },
+      languageRequirements: data.languageRequirements || {
+        ieltsRequired: data.ieltsRequired !== undefined ? data.ieltsRequired : true,
+        minIeltsOverall: parseFloat(data.minIeltsOverall) || 6.5,
+        waiverPossible: data.waiverPossible || false,
+      },
+      eligibleNationalities: data.eligibleNationalities || ['All International Applicants'],
+      officialUrl: data.officialUrl || 'https://www.chevening.org/',
+      officialApplicationPortal: data.officialApplicationPortal || data.officialUrl || 'https://www.chevening.org/',
+      source: data.source || 'Admin Direct Entry',
+      lastVerified: new Date().toISOString().split('T')[0],
+      overview: data.overview || 'Comprehensive international higher education fellowship opportunity.',
+      requiredDocuments: data.requiredDocuments || ['Academic Transcripts', 'CV', 'Statement of Purpose', 'LORs'],
+      applicationProcess: data.applicationProcess || [
+        'Prepare certified academic records',
+        'Submit official application on provider website',
+      ],
+      isVerified: true,
+      isFeatured: !!data.isFeatured,
+    };
+
+    scholarshipsDB.unshift(newScholarship);
+    searchCache.clear(); // invalidate search cache
+    addLog('INFO', `Admin created new scholarship: "${newScholarship.title}" [${newScholarship.id}]`, 'SCHOLARSHIP_CRUD');
+
+    res.status(201).json({ success: true, scholarship: newScholarship });
+  } catch (err: any) {
+    addLog('ERROR', `Error creating scholarship: ${err.message}`, 'SCHOLARSHIP_CRUD');
+    res.status(500).json({ error: err.message || 'Failed to create scholarship' });
+  }
+});
+
+// Update scholarship
+app.put('/api/admin/scholarships/:id', (req, res) => {
+  const index = scholarshipsDB.findIndex((s) => s.id === req.params.id);
+  if (index === -1) {
+    return res.status(404).json({ error: 'Scholarship not found' });
+  }
+
+  const updated: Scholarship = {
+    ...scholarshipsDB[index],
+    ...req.body,
+    id: scholarshipsDB[index].id, // keep immutable id
+    lastVerified: new Date().toISOString().split('T')[0],
+  };
+
+  scholarshipsDB[index] = updated;
+  searchCache.clear();
+  addLog('INFO', `Admin updated scholarship: "${updated.title}" [${updated.id}]`, 'SCHOLARSHIP_CRUD');
+
+  res.json({ success: true, scholarship: updated });
+});
+
+// Delete scholarship
+app.delete('/api/admin/scholarships/:id', (req, res) => {
+  const index = scholarshipsDB.findIndex((s) => s.id === req.params.id);
+  if (index === -1) {
+    return res.status(404).json({ error: 'Scholarship not found' });
+  }
+
+  const removed = scholarshipsDB.splice(index, 1)[0];
+  searchCache.clear();
+  addLog('WARN', `Admin deleted scholarship: "${removed.title}" [${removed.id}]`, 'SCHOLARSHIP_CRUD');
+
+  res.json({ success: true, message: `Scholarship "${removed.title}" deleted.` });
+});
+
+// Toggle Featured Status
+app.post('/api/admin/scholarships/:id/toggle-featured', (req, res) => {
+  const scholarship = scholarshipsDB.find((s) => s.id === req.params.id);
+  if (!scholarship) {
+    return res.status(404).json({ error: 'Scholarship not found' });
+  }
+
+  scholarship.isFeatured = !scholarship.isFeatured;
+  searchCache.clear();
+  addLog(
+    'INFO',
+    `Admin toggled featured status for "${scholarship.title}" to: ${scholarship.isFeatured ? 'FEATURED' : 'STANDARD'}`,
+    'SCHOLARSHIP_CRUD'
+  );
+
+  res.json({ success: true, isFeatured: scholarship.isFeatured, scholarship });
+});
+
+// ----------------- ADMIN EXECUTION LOGS ----------------- //
+app.get('/api/admin/logs', (req, res) => {
+  const { level, search } = req.query;
+  let filtered = [...serverLogs];
+
+  if (level && typeof level === 'string' && level !== 'ALL') {
+    filtered = filtered.filter((l) => l.level === level);
+  }
+
+  if (search && typeof search === 'string' && search.trim()) {
+    const q = search.toLowerCase();
+    filtered = filtered.filter((l) => l.message.toLowerCase().includes(q) || l.category?.toLowerCase().includes(q));
+  }
+
+  res.json({ logs: filtered.slice(0, 100), totalCount: serverLogs.length });
+});
+
+app.delete('/api/admin/logs', (req, res) => {
+  serverLogs.length = 0;
+  addLog('INFO', 'Server execution logs cleared by administrator "qulli"', 'ADMIN');
+  res.json({ success: true, message: 'Logs cleared successfully' });
+});
+
+// ----------------- PUBLIC & STUDENT SCHOLARSHIP API ----------------- //
 
 // Health check
 app.get('/api/health', (req, res) => {
-  res.json({ status: 'ok', timestamp: new Date().toISOString(), hasGeminiKey: !!apiKey });
+  res.json({
+    status: 'ok',
+    timestamp: new Date().toISOString(),
+    hasGeminiKey: !!apiKey,
+    totalScholarships: scholarshipsDB.length,
+    uptimeSeconds: Math.floor((Date.now() - serverStartTime) / 1000),
+  });
 });
 
-// List scholarships with filtering
+// List scholarships with filtering (served from dynamic scholarshipsDB)
 app.get('/api/scholarships', (req, res) => {
   try {
-    let results = [...VERIFIED_SCHOLARSHIPS];
+    let results = [...scholarshipsDB];
     const { query, country, degreeLevel, fundingType, field, featuredOnly } = req.query;
 
     if (query && typeof query === 'string' && query.trim()) {
@@ -215,20 +565,21 @@ app.get('/api/scholarships', (req, res) => {
 
     res.json({ count: results.length, scholarships: results });
   } catch (error: any) {
+    addLog('ERROR', `Failed to fetch scholarships: ${error.message}`, 'HTTP');
     res.status(500).json({ error: error.message || 'Failed to fetch scholarships' });
   }
 });
 
 // Single scholarship details
 app.get('/api/scholarships/:id', (req, res) => {
-  const scholarship = VERIFIED_SCHOLARSHIPS.find((s) => s.id === req.params.id);
+  const scholarship = scholarshipsDB.find((s) => s.id === req.params.id);
   if (!scholarship) {
     return res.status(404).json({ error: 'Scholarship not found' });
   }
   res.json({ scholarship });
 });
 
-// Authentication endpoints
+// Student Authentication endpoints
 app.post('/api/auth/register', (req, res) => {
   const { fullName, email, password } = req.body;
   if (!email || !password || !fullName) {
@@ -243,12 +594,14 @@ app.post('/api/auth/register', (req, res) => {
   const newUserId = 'usr-' + Math.random().toString(36).substring(2, 9);
   const verificationCode = Math.floor(100000 + Math.random() * 900000).toString();
 
-  const newUser = {
+  const newUser: UserStoreRecord = {
     id: newUserId,
     email: cleanEmail,
     name: fullName.trim(),
-    passwordHash: password, // For demonstration
+    passwordHash: password,
     isEmailVerified: false,
+    isActive: true,
+    createdAt: new Date().toISOString(),
     verificationCode,
     verificationSentAt: Date.now(),
     profile: {
@@ -286,6 +639,7 @@ app.post('/api/auth/register', (req, res) => {
   };
 
   users[cleanEmail] = newUser;
+  addLog('INFO', `New student registered: ${newUser.name} (${newUser.email})`, 'AUTH');
 
   res.json({
     message: 'Registration successful! Verification code sent to email.',
@@ -304,8 +658,16 @@ app.post('/api/auth/login', (req, res) => {
   const user = users[cleanEmail];
 
   if (!user || user.passwordHash !== password) {
+    addLog('WARN', `Failed student login attempt for ${cleanEmail}`, 'AUTH');
     return res.status(401).json({ error: 'Invalid email or password' });
   }
+
+  if (user.isActive === false) {
+    addLog('WARN', `Suspended student attempted login: ${cleanEmail}`, 'AUTH');
+    return res.status(403).json({ error: 'Your student account has been suspended by an administrator. Please contact support.' });
+  }
+
+  addLog('INFO', `Student signed in: ${user.email}`, 'AUTH');
 
   res.json({
     user: { id: user.id, email: user.email, name: user.name, isEmailVerified: user.isEmailVerified },
@@ -323,12 +685,14 @@ app.post('/api/auth/verify-email', (req, res) => {
 
   if (user.verificationCode && user.verificationCode === code) {
     user.isEmailVerified = true;
+    addLog('INFO', `Email verified for student: ${user.email}`, 'AUTH');
     return res.json({ success: true, message: 'Email verified successfully!' });
   }
 
-  // Allow bypass with 123456 for testing simplicity if needed
+  // Allow test code 123456
   if (code === '123456') {
     user.isEmailVerified = true;
+    addLog('INFO', `Email verified (demo code) for student: ${user.email}`, 'AUTH');
     return res.json({ success: true, message: 'Email verified successfully!' });
   }
 
@@ -340,9 +704,9 @@ app.post('/api/auth/forgot-password', (req, res) => {
   const cleanEmail = email?.toLowerCase().trim();
   const user = users[cleanEmail];
   if (!user) {
-    // Keep response generic to prevent email enumeration
     return res.json({ message: 'If an account exists with this email, a password reset link has been dispatched.' });
   }
+  addLog('INFO', `Password reset dispatched for ${user.email}`, 'AUTH');
   res.json({
     message: 'If an account exists with this email, a password reset link has been dispatched.',
     simulatedLink: `https://app.globalscholar.org/reset-password?token=simulated-${user.id}`,
@@ -367,6 +731,11 @@ app.put('/api/profile', (req, res) => {
     updatedAt: new Date().toISOString(),
   };
 
+  addLog('INFO', `Student updated profile: ${user.email}`, 'PROFILE', {
+    cgpa: user.profile.cgpa,
+    targetDegree: user.profile.preferredDegreeLevel,
+  });
+
   res.json({ profile: user.profile });
 });
 
@@ -374,7 +743,7 @@ app.put('/api/profile', (req, res) => {
 app.get('/api/saved', (req, res) => {
   const email = (req.query.email as string)?.toLowerCase().trim();
   const user = users[email] || users[INITIAL_DEMO_USER.email];
-  const savedScholarships = VERIFIED_SCHOLARSHIPS.filter((s) => user.savedScholarshipIds.includes(s.id));
+  const savedScholarships = scholarshipsDB.filter((s) => user.savedScholarshipIds.includes(s.id));
   res.json({ savedIds: user.savedScholarshipIds, scholarships: savedScholarships });
 });
 
@@ -393,6 +762,7 @@ app.post('/api/saved/toggle', (req, res) => {
     isSaved = true;
   }
 
+  addLog('INFO', `Student ${user.email} ${isSaved ? 'saved' : 'unsaved'} scholarship ${scholarshipId}`, 'SAVED');
   res.json({ isSaved, savedIds: user.savedScholarshipIds });
 });
 
@@ -430,6 +800,7 @@ app.post('/api/tracker', (req, res) => {
   };
 
   user.trackedApplications.push(newApp);
+  addLog('INFO', `Student ${user.email} added application to tracker: "${newApp.scholarshipTitle}"`, 'TRACKER');
   res.json({ tracker: user.trackedApplications, application: newApp });
 });
 
@@ -449,6 +820,12 @@ app.put('/api/tracker/:id', (req, res) => {
     lastUpdated: new Date().toISOString(),
   };
 
+  addLog(
+    'INFO',
+    `Student ${user.email} updated tracker item "${user.trackedApplications[itemIndex].scholarshipTitle}" to status: ${user.trackedApplications[itemIndex].status}`,
+    'TRACKER'
+  );
+
   res.json({ tracker: user.trackedApplications });
 });
 
@@ -457,6 +834,7 @@ app.delete('/api/tracker/:id', (req, res) => {
   const user = users[email] || users[INITIAL_DEMO_USER.email];
 
   user.trackedApplications = user.trackedApplications.filter((t) => t.id !== req.params.id);
+  addLog('INFO', `Student ${user.email} removed tracked application: ${req.params.id}`, 'TRACKER');
   res.json({ tracker: user.trackedApplications });
 });
 
@@ -464,17 +842,23 @@ app.delete('/api/tracker/:id', (req, res) => {
 
 // AI-powered scholarship search with Google Search grounding
 app.post('/api/gemini/search', async (req, res) => {
+  searchQueriesCount++;
   try {
     const { query, profile, filters } = req.body;
     const cacheKey = JSON.stringify({ query, profile: { nationality: profile?.nationality, degree: profile?.preferredDegreeLevel }, filters });
 
     const cached = searchCache.get(cacheKey);
     if (cached && Date.now() - cached.timestamp < CACHE_TTL_MS) {
+      addLog('INFO', `Serving cached AI search result for query: "${query || 'default'}"`, 'AI_SEARCH');
       return res.json(cached.data);
     }
 
-    // Default to verified scholarship database
-    let matchingScholarships = [...VERIFIED_SCHOLARSHIPS];
+    addLog('AI_SEARCH', `Starting AI Search with Google Search Grounding for: "${query || 'General Search'}"`, 'AI_SEARCH', {
+      userNationality: profile?.nationality,
+      targetDegree: profile?.preferredDegreeLevel,
+    });
+
+    let matchingScholarships = [...scholarshipsDB];
     let groundingSources: { uri: string; title: string }[] = [];
     let aiOverview = '';
     let isLiveSearch = false;
@@ -493,7 +877,6 @@ app.post('/api/gemini/search', async (req, res) => {
       );
     }
 
-    // If query was very specific or user used country/degree filters
     if (filters?.country && filters.country !== 'All') {
       matchingScholarships = matchingScholarships.filter((s) => s.country.toLowerCase() === filters.country.toLowerCase());
     }
@@ -501,7 +884,7 @@ app.post('/api/gemini/search', async (req, res) => {
       matchingScholarships = matchingScholarships.filter((s) => s.degreeLevels.includes(filters.degreeLevel));
     }
 
-    // If Gemini client is configured, run search with Google Search grounding
+    // Call Gemini with Google Search grounding
     if (aiClient) {
       try {
         const studentContext = profile
@@ -519,13 +902,14 @@ A student is searching for international scholarships.
 Query: "${query || 'Top verified international scholarships for international students'}"
 ${studentContext}
 
-Use Google Search grounding to discover genuine, verified international scholarship programs, official deadliness, application websites, and eligibility rules.
-Never fabricate deadliness, funding allowances, or scholarship titles.
+Use Google Search grounding to discover genuine, verified international scholarship programs, official deadlines, application websites, and eligibility rules.
+Never fabricate deadlines, funding allowances, or scholarship titles.
 Format your answer with:
 1. A concise 3-paragraph executive summary of the best matching opportunities, highlighting funding coverage and crucial deadlines.
 2. Concrete tips on fulfilling requirements (IELTS waivers, CGPA equivalency, recommendation letters).
 Include official reference URLs.`;
 
+        const startCall = Date.now();
         const response = await aiClient.models.generateContent({
           model: 'gemini-3.8-flash',
           contents: searchPrompt,
@@ -534,6 +918,7 @@ Include official reference URLs.`;
           },
         });
 
+        const duration = Date.now() - startCall;
         aiOverview = response.text || '';
         isLiveSearch = true;
 
@@ -549,15 +934,21 @@ Include official reference URLs.`;
             }
           });
         }
+
+        addLog(
+          'AI_SEARCH',
+          `Gemini search grounding completed in ${duration}ms with ${groundingSources.length} official web citations`,
+          'AI_SEARCH'
+        );
       } catch (err: any) {
-        console.warn('Gemini search grounding call failed, falling back to database:', err.message);
+        addLog('WARN', `Gemini search grounding fallback triggered: ${err.message}`, 'AI_SEARCH');
         aiOverview = `Discovered ${matchingScholarships.length} verified scholarship opportunities from the institutional scholarship database matching your criteria.`;
       }
     } else {
       aiOverview = `Retrieved ${matchingScholarships.length} verified scholarship opportunities from the verified database.`;
     }
 
-    // Evaluate personalized eligibility for each scholarship in result
+    // Evaluate personalized eligibility
     const evaluatedScholarships = matchingScholarships.map((s) => {
       const evalResult = evaluateEligibility(s, profile || {});
       return {
@@ -568,7 +959,6 @@ Include official reference URLs.`;
       };
     });
 
-    // Sort by match score descending
     evaluatedScholarships.sort((a, b) => (b.matchScore || 0) - (a.matchScore || 0));
 
     const responsePayload = {
@@ -582,6 +972,7 @@ Include official reference URLs.`;
     searchCache.set(cacheKey, { timestamp: Date.now(), data: responsePayload });
     res.json(responsePayload);
   } catch (error: any) {
+    addLog('ERROR', `AI search failed: ${error.message}`, 'AI_SEARCH');
     res.status(500).json({ error: error.message || 'AI search failed' });
   }
 });
@@ -590,15 +981,14 @@ Include official reference URLs.`;
 app.post('/api/gemini/eligibility', async (req, res) => {
   try {
     const { scholarshipId, profile } = req.body;
-    const scholarship = VERIFIED_SCHOLARSHIPS.find((s) => s.id === scholarshipId);
+    const scholarship = scholarshipsDB.find((s) => s.id === scholarshipId);
     if (!scholarship) {
       return res.status(404).json({ error: 'Scholarship not found' });
     }
 
-    // Run deterministic rules engine first
     const basicEval = evaluateEligibility(scholarship, profile || {});
-
     let aiDetailedAnalysis = '';
+
     if (aiClient) {
       try {
         const prompt = `You are an expert scholarship admissions advisor.
@@ -633,8 +1023,9 @@ Disclaimer: State clearly that this is an advisory analysis and does not guarant
         });
 
         aiDetailedAnalysis = response.text || '';
+        addLog('INFO', `Generated deep AI eligibility strategy for scholarship "${scholarship.title}"`, 'AI_ELIGIBILITY');
       } catch (err: any) {
-        console.warn('Gemini eligibility call failed:', err.message);
+        addLog('WARN', `Gemini eligibility call failed: ${err.message}`, 'AI_ELIGIBILITY');
       }
     }
 
@@ -651,12 +1042,14 @@ Disclaimer: State clearly that this is an advisory analysis and does not guarant
 // Interactive AI Scholarship Advisor Chat
 app.post('/api/gemini/chat', async (req, res) => {
   try {
-    const { message, chatHistory, profile } = req.body;
+    const { message, profile } = req.body;
     if (!message) return res.status(400).json({ error: 'Message is required' });
+
+    addLog('AI_SEARCH', `Scholarship advisor chat query: "${message.substring(0, 80)}"`, 'AI_CHAT');
 
     if (!aiClient) {
       return res.json({
-        reply: `Thank you for your question about "${message}". I can confirm that verified scholarships such as Chevening, Fulbright, DAAD, and Erasmus Mundus offer full funding including tuition waivers, monthly stipends, and travel grants. Please refer to each scholarship's detailed page for exact eligibility rules.`,
+        reply: `Thank you for your question about "${message}". Verified scholarships such as Chevening, Fulbright, DAAD, and Erasmus Mundus offer full funding including tuition waivers, monthly stipends, and travel grants. Please refer to each scholarship's detailed page for exact eligibility rules.`,
       });
     }
 
@@ -695,6 +1088,7 @@ Rules:
 
     res.json({ reply, sources: sources.slice(0, 5) });
   } catch (error: any) {
+    addLog('ERROR', `Chat service error: ${error.message}`, 'AI_CHAT');
     res.status(500).json({ error: error.message || 'Chat service error' });
   }
 });
@@ -734,7 +1128,7 @@ async function startServer() {
   }
 
   app.listen(PORT, '0.0.0.0', () => {
-    console.log(`GlobalScholar AI Full-Stack Server running at http://0.0.0.0:${PORT}`);
+    addLog('INFO', `Server is listening on http://0.0.0.0:${PORT}`, 'BOOT');
   });
 }
 

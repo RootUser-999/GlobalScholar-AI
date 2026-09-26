@@ -62,12 +62,12 @@ export const AuthModals: React.FC<AuthModalsProps> = ({
       return;
     }
 
-    const success = await login(loginEmail, loginPassword);
-    if (success) {
+    const res = await login(loginEmail, loginPassword);
+    if (res.success) {
       onSuccess();
       onClose();
     } else {
-      setErrorMsg('Invalid email or password.');
+      setErrorMsg(res.error || 'Invalid email or password.');
     }
   };
 

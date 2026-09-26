@@ -13,7 +13,8 @@ import {
   LogOut,
   ChevronDown,
   Layers,
-  Database
+  Database,
+  ShieldAlert
 } from 'lucide-react';
 
 interface NavbarProps {
@@ -21,6 +22,7 @@ interface NavbarProps {
   onNavigate: (view: string) => void;
   onOpenAuth: (mode: 'login' | 'signup') => void;
   onOpenAdminBridge?: () => void;
+  onOpenAdminLogin?: () => void;
 }
 
 export const Navbar: React.FC<NavbarProps> = ({
@@ -28,8 +30,9 @@ export const Navbar: React.FC<NavbarProps> = ({
   onNavigate,
   onOpenAuth,
   onOpenAdminBridge,
+  onOpenAdminLogin,
 }) => {
-  const { user, profile, savedScholarshipIds, logout } = useAuth();
+  const { user, profile, savedScholarshipIds, logout, isAdmin, adminUser, logoutAdmin } = useAuth();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [userDropdownOpen, setUserDropdownOpen] = useState(false);
 
@@ -182,6 +185,30 @@ export const Navbar: React.FC<NavbarProps> = ({
 
           {/* Right Action Area */}
           <div className="hidden lg:flex items-center gap-3">
+            {/* Admin Suite Button (If authenticated as admin) */}
+            {isAdmin ? (
+              <button
+                onClick={() => handleNavClick('admin')}
+                className={`px-3 py-1.5 rounded-xl font-bold text-xs flex items-center gap-1.5 transition-all shadow-sm ${
+                  currentView === 'admin'
+                    ? 'bg-amber-400 text-slate-950 font-extrabold shadow'
+                    : 'bg-amber-50 text-amber-900 border border-amber-300 hover:bg-amber-100'
+                }`}
+              >
+                <ShieldAlert className="w-4 h-4 text-amber-600" />
+                <span>Admin Suite</span>
+              </button>
+            ) : onOpenAdminLogin ? (
+              <button
+                onClick={onOpenAdminLogin}
+                title="Admin Portal Login (qulli)"
+                className="text-slate-500 hover:text-slate-800 p-2 rounded-lg hover:bg-slate-100 transition-colors flex items-center gap-1 text-xs"
+              >
+                <ShieldAlert className="w-4 h-4 text-slate-500" />
+                <span className="text-xs text-slate-600 hidden xl:inline">Admin</span>
+              </button>
+            ) : null}
+
             {/* Admin bridge trigger for verifying database */}
             {onOpenAdminBridge && (
               <button
@@ -190,7 +217,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                 className="text-slate-500 hover:text-slate-800 p-2 rounded-lg hover:bg-slate-100 transition-colors flex items-center gap-1 text-xs"
               >
                 <Database className="w-4 h-4 text-slate-500" />
-                <span className="text-xs text-slate-600 hidden xl:inline">Admin DB</span>
+                <span className="text-xs text-slate-600 hidden xl:inline">DB View</span>
               </button>
             )}
 
@@ -293,6 +320,27 @@ export const Navbar: React.FC<NavbarProps> = ({
                         <GraduationCap className="w-4 h-4 text-slate-400" />
                         Profile Setup Wizard
                       </button>
+
+                      {isAdmin ? (
+                        <button
+                          onClick={() => handleNavClick('admin')}
+                          className="w-full px-4 py-2 text-left text-xs font-bold text-amber-900 bg-amber-50 hover:bg-amber-100 flex items-center gap-2"
+                        >
+                          <ShieldAlert className="w-4 h-4 text-amber-600" />
+                          Administrator Control Suite
+                        </button>
+                      ) : onOpenAdminLogin ? (
+                        <button
+                          onClick={() => {
+                            onOpenAdminLogin();
+                            setUserDropdownOpen(false);
+                          }}
+                          className="w-full px-4 py-2 text-left text-xs font-medium text-slate-700 hover:bg-slate-50 flex items-center gap-2"
+                        >
+                          <ShieldAlert className="w-4 h-4 text-slate-400" />
+                          Admin Login (qulli)
+                        </button>
+                      ) : null}
                     </div>
 
                     <div className="border-t border-slate-100 pt-1 mt-1">
