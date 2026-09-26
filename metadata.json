@@ -1,0 +1,7 @@
+{
+  "name": "GlobalScholar AI - International Scholarship Finder",
+  "description": "Discover verified international scholarships and funding opportunities worldwide with AI-powered matching based on your academic profile, nationality, and degree goals.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
+
