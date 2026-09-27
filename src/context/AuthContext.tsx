@@ -443,7 +443,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const loadDemoAccount = () => {
     const demoUser: UserAuth = {
       id: 'usr-student-01',
-      email: 'student@scholarpulse.org',
+      email: 'student@sea-academy.org',
       name: 'Alex Rivera',
       isEmailVerified: true,
     };
@@ -451,7 +451,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       ...BLANK_PROFILE,
       id: 'usr-student-01',
       fullName: 'Alex Rivera',
-      email: 'student@scholarpulse.org',
+      email: 'student@sea-academy.org',
       nationality: 'International',
       countryOfResidence: 'Canada',
       city: 'Toronto',

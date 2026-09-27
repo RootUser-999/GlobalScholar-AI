@@ -7,27 +7,32 @@ import {
   Sparkles,
   BookOpen,
   Mail,
-  Building
+  Building,
+  Phone,
+  Clock,
+  Headphones,
+  CheckCircle2
 } from 'lucide-react';
 
 interface AboutViewProps {
   onStartSearch: () => void;
   onExplore: () => void;
+  onOpenSupport?: () => void;
 }
 
-export const AboutView: React.FC<AboutViewProps> = ({ onStartSearch, onExplore }) => {
+export const AboutView: React.FC<AboutViewProps> = ({ onStartSearch, onExplore, onOpenSupport }) => {
   return (
     <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-12 space-y-12">
       {/* Hero */}
       <div className="text-center space-y-3">
-        <span className="text-xs font-bold uppercase tracking-wider text-blue-700 bg-blue-50 px-3 py-1 rounded-full border border-blue-200">
-          Our Mission
+        <span className="text-xs font-bold uppercase tracking-wider text-blue-700 bg-blue-50 px-3.5 py-1.5 rounded-full border border-blue-200">
+          SEA The Sophie Education Academy
         </span>
         <h1 className="text-3xl sm:text-5xl font-extrabold text-slate-900 tracking-tight">
           Democratizing Access to Global Higher Education
         </h1>
         <p className="text-sm sm:text-base text-slate-600 max-w-2xl mx-auto leading-relaxed">
-          ScholarPulse AI was founded to eliminate the informational asymmetry faced by talented students in developing and emerging nations seeking international scholarships.
+          SEA The Sophie Education Academy was founded to eliminate the informational asymmetry faced by talented students in developing and emerging nations seeking international scholarships.
         </p>
       </div>
 
@@ -71,7 +76,7 @@ export const AboutView: React.FC<AboutViewProps> = ({ onStartSearch, onExplore }
             Supported Fellowship Secretariats
           </h3>
           <p className="text-xs sm:text-sm text-slate-300 leading-relaxed">
-            GlobalScholar AI maintains up-to-date tracking for all major global awards including:
+            SEA The Sophie Education Academy maintains up-to-date tracking for all major global awards including:
           </p>
         </div>
 
@@ -99,6 +104,72 @@ export const AboutView: React.FC<AboutViewProps> = ({ onStartSearch, onExplore }
           >
             Explore Full Database
           </button>
+        </div>
+      </div>
+
+      {/* Official Academy Contact & Support Section */}
+      <div className="p-8 sm:p-10 rounded-3xl bg-gradient-to-br from-blue-900 via-indigo-900 to-slate-900 text-white shadow-xl space-y-6 border border-blue-800/50">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-blue-800/60 pb-6">
+          <div>
+            <span className="text-xs font-bold tracking-wider text-blue-300 uppercase">Official Secretariat</span>
+            <h2 className="text-2xl font-bold text-white tracking-tight mt-1">
+              SEA The Sophie Education Academy
+            </h2>
+            <p className="text-xs text-blue-200 mt-0.5">
+              Academic Advisory & International Admissions Liaison
+            </p>
+          </div>
+          {onOpenSupport && (
+            <button
+              onClick={onOpenSupport}
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-semibold text-xs transition-colors shadow self-start sm:self-auto"
+            >
+              <Headphones className="w-4 h-4" />
+              <span>Contact Support</span>
+            </button>
+          )}
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="p-5 rounded-2xl bg-white/10 border border-white/10 space-y-2">
+            <div className="flex items-center gap-2 text-blue-300 font-semibold text-xs">
+              <Phone className="w-4 h-4" />
+              <span>Direct Hotline</span>
+            </div>
+            <p className="text-xl font-bold tracking-wide">
+              <a href="tel:+36302770528" className="hover:underline hover:text-blue-300 transition-colors">
+                +36302770528
+              </a>
+            </p>
+            <p className="text-[11px] text-blue-200">
+              Monday – Friday • 09:00 - 18:00 CET
+            </p>
+          </div>
+
+          <div className="p-5 rounded-2xl bg-white/10 border border-white/10 space-y-2">
+            <div className="flex items-center gap-2 text-indigo-300 font-semibold text-xs">
+              <Mail className="w-4 h-4" />
+              <span>Email Inquiries</span>
+            </div>
+            <p className="text-sm font-bold text-white">
+              <a href="mailto:support@sea-academy.org" className="hover:underline hover:text-indigo-300 transition-colors">
+                support@sea-academy.org
+              </a>
+            </p>
+            <p className="text-[11px] text-indigo-200">
+              Alternative: pocoloco7841@gmail.com
+            </p>
+          </div>
+
+          <div className="p-5 rounded-2xl bg-white/10 border border-white/10 space-y-2">
+            <div className="flex items-center gap-2 text-emerald-300 font-semibold text-xs">
+              <ShieldCheck className="w-4 h-4" />
+              <span>Accreditation & Standards</span>
+            </div>
+            <p className="text-xs text-slate-200 leading-relaxed">
+              Official verification for international scholarship applicants, visa requirements, and document translations.
+            </p>
+          </div>
         </div>
       </div>
     </div>

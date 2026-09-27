@@ -18,6 +18,7 @@ import { AdminBridgeModal } from './components/AdminBridgeModal';
 import { LegalModals } from './components/LegalModals';
 import { AdminPanel } from './components/admin/AdminPanel';
 import { AdminLoginModal } from './components/admin/AdminLoginModal';
+import { SupportModal } from './components/SupportModal';
 import { Scholarship } from './types';
 import { VERIFIED_SCHOLARSHIPS } from './data/scholarships';
 import { ShieldAlert } from 'lucide-react';
@@ -32,6 +33,7 @@ function AppContent() {
   const [authModalMode, setAuthModalMode] = useState<'login' | 'signup' | null>(null);
   const [adminBridgeOpen, setAdminBridgeOpen] = useState(false);
   const [adminLoginOpen, setAdminLoginOpen] = useState(false);
+  const [supportModalOpen, setSupportModalOpen] = useState(false);
   const [legalModalType, setLegalModalType] = useState<'privacy' | 'terms' | null>(null);
 
   // URL route handling for /admin and /admin/login
@@ -112,6 +114,7 @@ function AppContent() {
         onOpenAuth={(mode) => setAuthModalMode(mode)}
         onOpenAdminBridge={() => setAdminBridgeOpen(true)}
         onOpenAdminLogin={() => setAdminLoginOpen(true)}
+        onOpenSupport={() => setSupportModalOpen(true)}
       />
 
       {/* Main View Router */}
@@ -153,6 +156,7 @@ function AppContent() {
           <AboutView
             onStartSearch={() => handleNavigate('ai-search')}
             onExplore={() => handleNavigate('explore')}
+            onOpenSupport={() => setSupportModalOpen(true)}
           />
         )}
 
@@ -245,6 +249,7 @@ function AppContent() {
       <Footer
         onNavigate={handleNavigate}
         onOpenPolicy={(type) => setLegalModalType(type)}
+        onOpenSupport={() => setSupportModalOpen(true)}
         onOpenAdmin={() => {
           if (isAdmin) {
             handleNavigate('admin');
@@ -274,6 +279,11 @@ function AppContent() {
           }
         }}
         onSwitchMode={(mode) => setAuthModalMode(mode)}
+      />
+
+      <SupportModal
+        isOpen={supportModalOpen}
+        onClose={() => setSupportModalOpen(false)}
       />
 
       <AdminLoginModal

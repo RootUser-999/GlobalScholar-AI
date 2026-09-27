@@ -11,16 +11,19 @@ import {
   Youtube,
   Github,
   MapPin,
-  Heart
+  Heart,
+  Phone,
+  Headphones
 } from 'lucide-react';
 
 interface FooterProps {
   onNavigate: (view: string) => void;
   onOpenPolicy?: (type: 'privacy' | 'terms') => void;
   onOpenAdmin?: () => void;
+  onOpenSupport?: () => void;
 }
 
-export const Footer: React.FC<FooterProps> = ({ onNavigate, onOpenPolicy, onOpenAdmin }) => {
+export const Footer: React.FC<FooterProps> = ({ onNavigate, onOpenPolicy, onOpenAdmin, onOpenSupport }) => {
   return (
     <footer className="bg-slate-950 text-slate-300 pt-16 pb-12 border-t border-slate-800">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -32,14 +35,14 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate, onOpenPolicy, onOpen
                 <GraduationCap className="w-6 h-6" />
               </div>
               <div>
-                <span className="font-bold text-xl text-white tracking-tight">ScholarPulse AI</span>
+                <span className="font-extrabold text-xl text-white tracking-tight">SEA</span>
                 <span className="ml-2 text-xs font-semibold px-2 py-0.5 rounded bg-blue-900/60 text-blue-300 border border-blue-700/50">
-                  Global Edition
+                  The Sophie Education Academy
                 </span>
               </div>
             </div>
             <p className="text-sm text-slate-400 max-w-sm leading-relaxed">
-              Empowering students worldwide to access higher education through verified international scholarships, personalized academic profile matching, and live eligibility reasoning.
+              SEA The Sophie Education Academy empowers students worldwide to access higher education through verified international scholarships, personalized academic profile matching, and live eligibility reasoning.
             </p>
             <div className="flex items-center gap-3 pt-2 text-slate-400">
               <a
@@ -182,20 +185,28 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate, onOpenPolicy, onOpen
           {/* Contact & Verification info */}
           <div>
             <h4 className="text-xs font-semibold text-slate-200 uppercase tracking-wider mb-4">
-              Transparency
+              Contact & Secretariat
             </h4>
             <div className="space-y-3 text-xs text-slate-400 leading-relaxed">
               <p className="flex items-start gap-2">
-                <Shield className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
-                <span>All listings link directly to genuine government and university portals.</span>
-              </p>
-              <p className="flex items-start gap-2">
-                <Globe2 className="w-4 h-4 text-blue-400 shrink-0 mt-0.5" />
-                <span>Covers 160+ eligible nationalities across Europe, Americas, Asia, and Africa.</span>
+                <Phone className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
+                <a href="tel:+36302770528" className="hover:text-emerald-400 transition-colors font-medium text-slate-300">
+                  +36302770528
+                </a>
               </p>
               <p className="flex items-start gap-2">
                 <Mail className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
-                <span>support@globalscholar.org</span>
+                <a href="mailto:support@sea-academy.org" className="hover:text-amber-400 transition-colors">
+                  support@sea-academy.org
+                </a>
+              </p>
+              <p className="flex items-start gap-2">
+                <Shield className="w-4 h-4 text-blue-400 shrink-0 mt-0.5" />
+                <span>All listings link directly to genuine government & university portals.</span>
+              </p>
+              <p className="flex items-start gap-2">
+                <Globe2 className="w-4 h-4 text-indigo-400 shrink-0 mt-0.5" />
+                <span>Covers 160+ eligible nationalities across Europe, Americas, Asia, and Africa.</span>
               </p>
             </div>
           </div>
@@ -203,8 +214,17 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate, onOpenPolicy, onOpen
 
         {/* Bottom Bar */}
         <div className="pt-8 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-slate-500">
-          <p>© {new Date().getFullYear()} GlobalScholar AI. All rights reserved. Data verified against official government scholarship secretariats.</p>
-          <div className="flex items-center gap-6">
+          <p>© {new Date().getFullYear()} SEA The Sophie Education Academy. All rights reserved. Data verified against official government scholarship secretariats.</p>
+          <div className="flex flex-wrap items-center gap-6">
+            {onOpenSupport && (
+              <button
+                onClick={onOpenSupport}
+                className="hover:text-blue-400 text-blue-500 font-medium transition-colors flex items-center gap-1"
+              >
+                <Headphones className="w-3.5 h-3.5" />
+                <span>Support (+36302770528)</span>
+              </button>
+            )}
             <button
               onClick={() => onOpenPolicy && onOpenPolicy('privacy')}
               className="hover:text-slate-300 transition-colors"

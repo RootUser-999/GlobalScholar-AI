@@ -14,7 +14,9 @@ import {
   ChevronDown,
   Layers,
   Database,
-  ShieldAlert
+  ShieldAlert,
+  Phone,
+  Headphones
 } from 'lucide-react';
 
 interface NavbarProps {
@@ -23,6 +25,7 @@ interface NavbarProps {
   onOpenAuth: (mode: 'login' | 'signup') => void;
   onOpenAdminBridge?: () => void;
   onOpenAdminLogin?: () => void;
+  onOpenSupport?: () => void;
 }
 
 export const Navbar: React.FC<NavbarProps> = ({
@@ -31,6 +34,7 @@ export const Navbar: React.FC<NavbarProps> = ({
   onOpenAuth,
   onOpenAdminBridge,
   onOpenAdminLogin,
+  onOpenSupport,
 }) => {
   const { user, profile, savedScholarshipIds, logout, isAdmin, adminUser, logoutAdmin } = useAuth();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -70,13 +74,13 @@ export const Navbar: React.FC<NavbarProps> = ({
             </div>
             <div>
               <div className="flex items-center gap-1.5">
-                <span className="font-bold text-lg text-slate-900 tracking-tight">ScholarPulse</span>
-                <span className="text-xs font-semibold px-1.5 py-0.5 rounded bg-blue-50 text-blue-700 border border-blue-200/60">
-                  AI
+                <span className="font-extrabold text-xl text-slate-900 tracking-tight">SEA</span>
+                <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-blue-50 text-blue-700 border border-blue-200/60 uppercase tracking-wider">
+                  Academy
                 </span>
               </div>
-              <span className="text-[11px] text-slate-500 hidden sm:block">
-                International Scholarship Finder
+              <span className="text-[11px] text-slate-500 font-medium hidden sm:block">
+                The Sophie Education Academy
               </span>
             </div>
           </div>
@@ -218,6 +222,19 @@ export const Navbar: React.FC<NavbarProps> = ({
               >
                 <Database className="w-4 h-4 text-slate-500" />
                 <span className="text-xs text-slate-600 hidden xl:inline">DB View</span>
+              </button>
+            )}
+
+            {/* Support Hotline Trigger */}
+            {onOpenSupport && (
+              <button
+                onClick={onOpenSupport}
+                title="SEA Admissions Hotline: +36302770528"
+                className="text-slate-600 hover:text-blue-700 px-2.5 py-1.5 rounded-lg hover:bg-blue-50/60 transition-colors flex items-center gap-1.5 text-xs font-semibold"
+              >
+                <Phone className="w-3.5 h-3.5 text-blue-600" />
+                <span className="hidden xl:inline">+36302770528</span>
+                <span className="xl:hidden">Support</span>
               </button>
             )}
 
@@ -430,6 +447,22 @@ export const Navbar: React.FC<NavbarProps> = ({
             >
               About Us
             </button>
+
+            {onOpenSupport && (
+              <button
+                onClick={() => {
+                  onOpenSupport();
+                  setMobileMenuOpen(false);
+                }}
+                className="w-full text-left px-3 py-2 text-sm font-semibold text-blue-700 bg-blue-50/70 hover:bg-blue-100/70 rounded-lg flex items-center justify-between"
+              >
+                <span className="flex items-center gap-2">
+                  <Phone className="w-4 h-4 text-blue-600" />
+                  <span>Support & Hotline</span>
+                </span>
+                <span className="text-xs font-bold text-blue-800">+36302770528</span>
+              </button>
+            )}
 
             {user ? (
               <>

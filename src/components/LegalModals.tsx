@@ -29,7 +29,7 @@ export const LegalModals: React.FC<LegalModalsProps> = ({ type, onClose }) => {
             <>
               <h3 className="text-sm font-bold text-slate-900">1. Information We Collect</h3>
               <p>
-                GlobalScholar AI collects student profile credentials including academic performance (CGPA, grading scales), degree titles, nationality, language proficiency scores, and scholarship destination preferences solely for the purpose of matching opportunities and calculating eligibility.
+                SEA (The Sophie Education Academy) collects student profile credentials including academic performance (CGPA, grading scales), degree titles, nationality, language proficiency scores, and scholarship destination preferences solely for the purpose of matching opportunities and calculating eligibility.
               </p>
               <h3 className="text-sm font-bold text-slate-900">2. Data Privacy & Zero Third-Party Sharing</h3>
               <p>
@@ -44,7 +44,7 @@ export const LegalModals: React.FC<LegalModalsProps> = ({ type, onClose }) => {
             <>
               <h3 className="text-sm font-bold text-slate-900">1. Advisory Purpose & No Guarantee of Admission</h3>
               <p>
-                GlobalScholar AI is an informational discovery and guidance platform. AI eligibility evaluations and match percentages are advisory estimates derived from publicly published requirements. Admission and scholarship awards are decided solely by the respective university admissions committees, national governments, and scholarship secretariats.
+                SEA (The Sophie Education Academy) is an informational discovery and guidance platform. AI eligibility evaluations and match percentages are advisory estimates derived from publicly published requirements. Admission and scholarship awards are decided solely by the respective university admissions committees, national governments, and scholarship secretariats.
               </p>
               <h3 className="text-sm font-bold text-slate-900">2. Official Application Submission</h3>
               <p>
