@@ -92,16 +92,16 @@ export const SupportModal: React.FC<SupportModalProps> = ({ isOpen, onClose }) =
           <div className="p-4 rounded-2xl bg-indigo-50/70 border border-indigo-100 space-y-1">
             <div className="flex items-center gap-2 text-indigo-800 text-xs font-bold">
               <Mail className="w-4 h-4 text-indigo-600" />
-              <span>Support Desk</span>
+              <span>Official Email</span>
             </div>
             <a
-              href="mailto:support@sea-academy.org"
-              className="text-xs font-bold text-indigo-900 hover:underline block truncate"
+              href="mailto:sophieedpro@gmail.com"
+              className="text-xs font-bold text-indigo-900 hover:text-indigo-700 hover:underline block truncate"
             >
-              support@sea-academy.org
+              sophieedpro@gmail.com
             </a>
             <p className="text-[11px] text-indigo-600/80 truncate">
-              pocoloco7841@gmail.com
+              Alternate: support@sea-academy.org
             </p>
           </div>
         </div>

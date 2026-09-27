@@ -51,8 +51,8 @@ addLog('INFO', 'SEA — The Sophie Education Academy Full-Stack Server initializ
 const mailTransporter = nodemailer.createTransport({
   service: 'gmail',
   auth: {
-    user: 'pocoloco7841@gmail.com',
-    pass: 'ngif lpqz ojbi qghl',
+    user: process.env.SMTP_USER || 'sophieedpro@gmail.com',
+    pass: process.env.SMTP_PASS || 'ngif lpqz ojbi qghl',
   },
 });
 
@@ -103,7 +103,7 @@ function generateSeaOTPEmailHtml(otpCode: string, studentName?: string) {
         <p style="margin: 4px 0 0 0;">
           Official Contact Phone: <a href="tel:+36302770528" style="color: #2563eb; text-decoration: none; font-weight: 600;">+36302770528</a>
         </p>
-        <p style="margin: 4px 0 0 0;">Support: support@sea-academy.org • pocoloco7841@gmail.com</p>
+        <p style="margin: 4px 0 0 0;">Support: <a href="mailto:sophieedpro@gmail.com" style="color: #2563eb; text-decoration: none; font-weight: 600;">sophieedpro@gmail.com</a> • support@sea-academy.org</p>
         <p style="margin: 6px 0 0 0; color: #94a3b8; font-size: 11px;">© ${new Date().getFullYear()} SEA The Sophie Education Academy. All rights reserved.</p>
       </div>
     </div>
@@ -652,7 +652,7 @@ app.post('/api/auth/register', (req, res) => {
   // Attempt live delivery via Nodemailer
   mailTransporter
     .sendMail({
-      from: '"SEA — The Sophie Education Academy" <pocoloco7841@gmail.com>',
+      from: '"SEA — The Sophie Education Academy" <sophieedpro@gmail.com>',
       to: cleanEmail,
       subject: 'Your SEA Verification Code',
       html: generateSeaOTPEmailHtml(verificationCode, newUser.name),
@@ -688,7 +688,7 @@ app.post('/api/auth/send-otp', async (req, res) => {
 
   try {
     const info = await mailTransporter.sendMail({
-      from: '"SEA — The Sophie Education Academy" <pocoloco7841@gmail.com>',
+      from: '"SEA — The Sophie Education Academy" <sophieedpro@gmail.com>',
       to: cleanEmail,
       subject: 'Your SEA Verification Code',
       html: generateSeaOTPEmailHtml(otpCode, name),

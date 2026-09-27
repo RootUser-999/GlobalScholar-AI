@@ -152,12 +152,12 @@ export const AboutView: React.FC<AboutViewProps> = ({ onStartSearch, onExplore, 
               <span>Email Inquiries</span>
             </div>
             <p className="text-sm font-bold text-white">
-              <a href="mailto:support@sea-academy.org" className="hover:underline hover:text-indigo-300 transition-colors">
-                support@sea-academy.org
+              <a href="mailto:sophieedpro@gmail.com" className="hover:underline hover:text-indigo-300 transition-colors">
+                sophieedpro@gmail.com
               </a>
             </p>
             <p className="text-[11px] text-indigo-200">
-              Alternative: pocoloco7841@gmail.com
+              Official Inquiries: <a href="mailto:support@sea-academy.org" className="hover:underline text-indigo-300">support@sea-academy.org</a>
             </p>
           </div>
 

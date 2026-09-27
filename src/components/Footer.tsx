@@ -196,8 +196,8 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate, onOpenPolicy, onOpen
               </p>
               <p className="flex items-start gap-2">
                 <Mail className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
-                <a href="mailto:support@sea-academy.org" className="hover:text-amber-400 transition-colors">
-                  support@sea-academy.org
+                <a href="mailto:sophieedpro@gmail.com" className="hover:text-amber-400 transition-colors">
+                  sophieedpro@gmail.com
                 </a>
               </p>
               <p className="flex items-start gap-2">
